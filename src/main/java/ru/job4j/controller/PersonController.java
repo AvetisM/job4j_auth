@@ -39,21 +39,19 @@ public class PersonController {
 
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Person person) {
-        if (this.persons.update(person)) {
-            return ResponseEntity.ok().build();
-        } else {
+        if (!this.persons.update(person)) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
         Person person = new Person();
         person.setId(id);
-        if (this.persons.delete(person)) {
-            return ResponseEntity.ok().build();
-        } else {
+        if (!this.persons.delete(person)) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        return ResponseEntity.ok().build();
     }
 }
