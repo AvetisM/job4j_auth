@@ -21,7 +21,7 @@ public class PersonService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Person user = persons.findByLogin(username);
+        Person user = findByLogin(username);
         if (user == null) {
             throw new UsernameNotFoundException(username);
         }
@@ -34,6 +34,10 @@ public class PersonService implements UserDetailsService {
 
     public Optional<Person> findById(int id) {
         return persons.findById(id);
+    }
+
+    public Person findByLogin(String login) {
+        return persons.findByLogin(login);
     }
 
     public Person save(Person person) {

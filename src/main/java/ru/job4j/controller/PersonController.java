@@ -1,22 +1,33 @@
 package ru.job4j.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.domain.Person;
 import ru.job4j.service.PersonService;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import javax.naming.AuthenticationException;
 
 @RestController
 @RequestMapping("/person")
 @AllArgsConstructor
 public class PersonController {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(PersonController.class.getSimpleName());
     private final PersonService persons;
 
     private BCryptPasswordEncoder encoder;
+    private final ObjectMapper objectMapper;
 
     @GetMapping("/all")
     public List<Person> findAll() {
@@ -33,7 +44,13 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<Person> create(@RequestBody Person person) {
+    public ResponseEntity<Person> create(@RequestBody Person person)
+            throws AuthenticationException {
+        validatePerson(person);
+        Person foundPerson = persons.findByLogin(person.getLogin());
+        if (foundPerson != null) {
+            throw new AuthenticationException("User with this name already exists");
+        }
         person.setPassword(encoder.encode(person.getPassword()));
         return new ResponseEntity<>(
                 this.persons.save(person),
@@ -43,8 +60,9 @@ public class PersonController {
 
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Person person) {
+        validatePerson(person);
         if (!this.persons.update(person)) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return ResponseEntity.ok().build();
     }
@@ -54,8 +72,30 @@ public class PersonController {
         Person person = new Person();
         person.setId(id);
         if (!this.persons.delete(person)) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok().build();
+    }
+
+    private void validatePerson(Person person) {
+        var login = person.getLogin();
+        var password = person.getPassword();
+        if (login == null) {
+            throw new NullPointerException("login mustn't be empty");
+        }
+        if (password == null) {
+            throw new NullPointerException("password mustn't be empty");
+        }
+    }
+
+    @ExceptionHandler(value = { AuthenticationException.class })
+    public void exceptionHandler(Exception e, HttpServletRequest request,
+                                 HttpServletResponse response) throws IOException {
+        response.setStatus(HttpStatus.BAD_REQUEST.value());
+        response.setContentType("application/json");
+        response.getWriter().write(objectMapper.writeValueAsString(new HashMap<>() { {
+            put("message", e.getMessage());
+        }}));
+        LOGGER.error(e.getLocalizedMessage());
     }
 }
