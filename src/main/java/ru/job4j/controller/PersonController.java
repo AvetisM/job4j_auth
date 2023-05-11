@@ -9,11 +9,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Person;
 import ru.job4j.service.PersonService;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import javax.naming.AuthenticationException;
 
@@ -68,7 +71,50 @@ public class PersonController {
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Person person) {
         validatePerson(person);
+        person.setPassword(encoder.encode(person.getPassword()));
         if (!this.persons.update(person)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Void> partialUpdate(@RequestBody Person person)
+            throws InvocationTargetException, IllegalAccessException {
+
+        var currentOptional = persons.findById(person.getId());
+        if (currentOptional.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        var current = currentOptional.get();
+        var methods = current.getClass().getDeclaredMethods();
+        var namePerMethod = new HashMap<String, Method>();
+        for (var method: methods) {
+            var name = method.getName();
+            if (name.startsWith("get") || name.startsWith("set")) {
+                namePerMethod.put(name, method);
+            }
+        }
+        for (var name : namePerMethod.keySet()) {
+            if (name.startsWith("get")) {
+                var getMethod = namePerMethod.get(name);
+                var setMethod = namePerMethod.get(name.replace("get", "set"));
+                if (setMethod == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Impossible invoke set method from object : "
+                                    + current + ", Check set and get pairs.");
+                }
+                var newValue = getMethod.invoke(person);
+                if (newValue != null) {
+                    if (name.endsWith("Password")) {
+                        setMethod.invoke(current, encoder.encode(newValue.toString()));
+                    } else {
+                        setMethod.invoke(current, newValue);
+                    }
+                }
+            }
+        }
+        if (!this.persons.update(current)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return ResponseEntity.ok().build();
