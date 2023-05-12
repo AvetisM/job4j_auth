@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Optional;
 import javax.naming.AuthenticationException;
 
 @RestController
@@ -79,13 +78,8 @@ public class PersonController {
 
     @PatchMapping("/")
     public ResponseEntity<Void> partialUpdate(@RequestBody PersonDTO personDTO) {
-        Optional<Person> personOptional = persons.findById(personDTO.getId());
-        if (personOptional.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        Person person = personOptional.get();
-        person.setPassword(encoder.encode(personDTO.getPassword()));
-        if (!this.persons.update(person)) {
+        personDTO.setPassword(encoder.encode(personDTO.getPassword()));
+        if (!this.persons.partialUpdate(personDTO)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return ResponseEntity.ok().build();

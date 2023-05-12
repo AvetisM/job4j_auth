@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import ru.job4j.domain.Person;
+import ru.job4j.dto.PersonDTO;
 import ru.job4j.repository.PersonRepository;
 
 import java.util.List;
@@ -45,6 +46,21 @@ public class PersonService implements UserDetailsService {
     }
 
     public boolean update(Person person) {
+        try {
+            persons.save(person);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean partialUpdate(PersonDTO personDTO) {
+        Optional<Person> personOptional = findById(personDTO.getId());
+        if (personOptional.isEmpty()) {
+            return false;
+        }
+        Person person = personOptional.get();
+        person.setPassword(personDTO.getPassword());
         try {
             persons.save(person);
             return true;
