@@ -1,11 +1,14 @@
 package ru.job4j.service;
 
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import ru.job4j.controller.PersonController;
 import ru.job4j.domain.Person;
 import ru.job4j.dto.PersonDTO;
 import ru.job4j.repository.PersonRepository;
@@ -18,6 +21,9 @@ import static java.util.Collections.emptyList;
 @Service
 @AllArgsConstructor
 public class PersonService implements UserDetailsService {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(PersonController.class.getSimpleName());
     private final PersonRepository persons;
 
     @Override
@@ -46,15 +52,18 @@ public class PersonService implements UserDetailsService {
     }
 
     public boolean update(Person person) {
+        boolean result = false;
         try {
             persons.save(person);
-            return true;
+            result =  true;
         } catch (Exception e) {
-            return false;
+            LOGGER.error(e.getLocalizedMessage());
         }
+        return result;
     }
 
     public boolean partialUpdate(PersonDTO personDTO) {
+        boolean result = false;
         Optional<Person> personOptional = findById(personDTO.getId());
         if (personOptional.isEmpty()) {
             return false;
@@ -63,18 +72,21 @@ public class PersonService implements UserDetailsService {
         person.setPassword(personDTO.getPassword());
         try {
             persons.save(person);
-            return true;
+            result = true;
         } catch (Exception e) {
-            return false;
+            LOGGER.error(e.getLocalizedMessage());
         }
+        return result;
     }
 
     public boolean delete(Person person) {
+        boolean result = false;
         try {
             persons.delete(person);
-            return true;
+            result = true;
         } catch (Exception e) {
-            return false;
+            LOGGER.error(e.getLocalizedMessage());
         }
+        return result;
     }
 }
