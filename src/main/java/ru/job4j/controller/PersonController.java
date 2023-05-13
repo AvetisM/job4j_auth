@@ -8,15 +8,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.domain.Person;
 import ru.job4j.dto.PersonDTO;
 import ru.job4j.service.PersonService;
+import ru.job4j.util.validation.Operation;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import javax.naming.AuthenticationException;
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/person")
@@ -52,9 +56,9 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<Person> create(@RequestBody Person person)
+    @Validated(Operation.OnCreate.class)
+    public ResponseEntity<Person> create(@Valid @RequestBody Person person)
             throws AuthenticationException {
-        validatePerson(person);
         Person foundPerson = persons.findByLogin(person.getLogin());
         if (foundPerson != null) {
             throw new AuthenticationException("User with this name already exists");
@@ -67,8 +71,8 @@ public class PersonController {
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Person person) {
-        validatePerson(person);
+    @Validated(Operation.OnUpdate.class)
+    public ResponseEntity<Void> update(@Valid @RequestBody Person person) {
         person.setPassword(encoder.encode(person.getPassword()));
         if (!this.persons.update(person)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -77,7 +81,7 @@ public class PersonController {
     }
 
     @PatchMapping("/")
-    public ResponseEntity<Void> partialUpdate(@RequestBody PersonDTO personDTO) {
+    public ResponseEntity<Void> partialUpdate(@Valid @RequestBody PersonDTO personDTO) {
         personDTO.setPassword(encoder.encode(personDTO.getPassword()));
         if (!this.persons.partialUpdate(personDTO)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -93,17 +97,6 @@ public class PersonController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok().build();
-    }
-
-    private void validatePerson(Person person) {
-        var login = person.getLogin();
-        var password = person.getPassword();
-        if (login == null) {
-            throw new NullPointerException("login mustn't be empty");
-        }
-        if (password == null) {
-            throw new NullPointerException("password mustn't be empty");
-        }
     }
 
     @ExceptionHandler(value = { AuthenticationException.class })
