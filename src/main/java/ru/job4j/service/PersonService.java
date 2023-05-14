@@ -48,7 +48,7 @@ public class PersonService implements UserDetailsService {
     }
 
     public Person save(Person person) {
-          return persons.save(person);
+        return persons.save(person);
     }
 
     public boolean update(Person person) {
@@ -57,7 +57,7 @@ public class PersonService implements UserDetailsService {
             persons.save(person);
             result =  true;
         } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage());
+            LOGGER.error(e.getLocalizedMessage(), e);
         }
         return result;
     }
@@ -74,7 +74,7 @@ public class PersonService implements UserDetailsService {
             persons.save(person);
             result = true;
         } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage());
+            LOGGER.error(e.getLocalizedMessage(), e);
         }
         return result;
     }
@@ -85,7 +85,7 @@ public class PersonService implements UserDetailsService {
             persons.delete(person);
             result = true;
         } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage());
+            LOGGER.error(e.getLocalizedMessage(), e);
         }
         return result;
     }

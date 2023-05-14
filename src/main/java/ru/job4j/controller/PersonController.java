@@ -56,8 +56,8 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    @Validated(Operation.OnCreate.class)
-    public ResponseEntity<Person> create(@Valid @RequestBody Person person)
+    public ResponseEntity<Person> create(@Validated(Operation.OnCreate.class)
+                                             @RequestBody Person person)
             throws AuthenticationException {
         Person foundPerson = persons.findByLogin(person.getLogin());
         if (foundPerson != null) {
@@ -71,8 +71,8 @@ public class PersonController {
     }
 
     @PutMapping("/")
-    @Validated(Operation.OnUpdate.class)
-    public ResponseEntity<Void> update(@Valid @RequestBody Person person) {
+    public ResponseEntity<Void> update(@Validated(Operation.OnUpdate.class)
+                                           @RequestBody Person person) {
         person.setPassword(encoder.encode(person.getPassword()));
         if (!this.persons.update(person)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
