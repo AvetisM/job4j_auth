@@ -1,14 +1,12 @@
 package ru.job4j.service;
 
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import ru.job4j.controller.PersonController;
 import ru.job4j.domain.Person;
 import ru.job4j.dto.PersonDTO;
 import ru.job4j.repository.PersonRepository;
@@ -20,10 +18,9 @@ import static java.util.Collections.emptyList;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class PersonService implements UserDetailsService {
 
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(PersonController.class.getSimpleName());
     private final PersonRepository persons;
 
     @Override
@@ -57,7 +54,7 @@ public class PersonService implements UserDetailsService {
             persons.save(person);
             result =  true;
         } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage(), e);
+            log.error(e.getLocalizedMessage(), e);
         }
         return result;
     }
@@ -74,7 +71,7 @@ public class PersonService implements UserDetailsService {
             persons.save(person);
             result = true;
         } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage(), e);
+            log.error(e.getLocalizedMessage(), e);
         }
         return result;
     }
@@ -85,7 +82,7 @@ public class PersonService implements UserDetailsService {
             persons.delete(person);
             result = true;
         } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage(), e);
+            log.error(e.getLocalizedMessage(), e);
         }
         return result;
     }
