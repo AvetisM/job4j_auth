@@ -1,7 +1,6 @@
 package ru.job4j.service;
 
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,10 +17,9 @@ import static java.util.Collections.emptyList;
 
 @Service
 @AllArgsConstructor
-@Slf4j
 public class PersonService implements UserDetailsService {
 
-    private final PersonRepository persons;
+    private final PersonRepository personRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -33,57 +31,45 @@ public class PersonService implements UserDetailsService {
     }
 
     public List<Person> findAll() {
-        return persons.findAll();
+        return personRepository.findAll();
     }
 
     public Optional<Person> findById(int id) {
-        return persons.findById(id);
+        return personRepository.findById(id);
     }
 
     public Person findByLogin(String login) {
-        return persons.findByLogin(login);
+        return personRepository.findByLogin(login);
     }
 
     public Person save(Person person) {
-        return persons.save(person);
+        return personRepository.save(person);
     }
 
     public boolean update(Person person) {
-        boolean result = false;
-        try {
-            persons.save(person);
-            result =  true;
-        } catch (Exception e) {
-            log.error(e.getLocalizedMessage(), e);
+        if (!personRepository.existsById(person.getId())) {
+            return false;
         }
-        return result;
+        personRepository.save(person);
+        return true;
     }
 
     public boolean partialUpdate(PersonDTO personDTO) {
-        boolean result = false;
         Optional<Person> personOptional = findById(personDTO.getId());
         if (personOptional.isEmpty()) {
             return false;
         }
         Person person = personOptional.get();
         person.setPassword(personDTO.getPassword());
-        try {
-            persons.save(person);
-            result = true;
-        } catch (Exception e) {
-            log.error(e.getLocalizedMessage(), e);
-        }
-        return result;
+        personRepository.save(person);
+        return true;
     }
 
-    public boolean delete(Person person) {
-        boolean result = false;
-        try {
-            persons.delete(person);
-            result = true;
-        } catch (Exception e) {
-            log.error(e.getLocalizedMessage(), e);
+    public boolean deleteById(int id) {
+        if (!personRepository.existsById(id)) {
+            return false;
         }
-        return result;
+        personRepository.deleteById(id);
+        return true;
     }
 }

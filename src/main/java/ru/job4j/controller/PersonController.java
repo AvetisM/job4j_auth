@@ -29,7 +29,7 @@ public class PersonController {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(PersonController.class.getSimpleName());
-    private final PersonService persons;
+    private final PersonService personService;
 
     private BCryptPasswordEncoder encoder;
     private final ObjectMapper objectMapper;
@@ -37,7 +37,7 @@ public class PersonController {
     @GetMapping("/all")
     public ResponseEntity<String> findAll() {
         var body = new HashMap<>() {{
-            put("users", persons.findAll());
+            put("users", personService.findAll());
         }}.toString();
         return ResponseEntity.status(HttpStatus.OK)
                 .header("Job4jAuthHeader", "job4j_auth")
@@ -48,7 +48,7 @@ public class PersonController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Person> findById(@PathVariable int id) {
-        var person = this.persons.findById(id);
+        var person = this.personService.findById(id);
         return new ResponseEntity<>(
                 person.orElse(new Person()),
                 person.isPresent() ? HttpStatus.OK : HttpStatus.NOT_FOUND
@@ -59,13 +59,13 @@ public class PersonController {
     public ResponseEntity<Person> create(@Validated(Operation.OnCreate.class)
                                              @RequestBody Person person)
             throws AuthenticationException {
-        Person foundPerson = persons.findByLogin(person.getLogin());
+        Person foundPerson = personService.findByLogin(person.getLogin());
         if (foundPerson != null) {
             throw new AuthenticationException("User with this name already exists");
         }
         person.setPassword(encoder.encode(person.getPassword()));
         return new ResponseEntity<>(
-                this.persons.save(person),
+                this.personService.save(person),
                 HttpStatus.CREATED
         );
     }
@@ -74,8 +74,8 @@ public class PersonController {
     public ResponseEntity<Void> update(@Validated(Operation.OnUpdate.class)
                                            @RequestBody Person person) {
         person.setPassword(encoder.encode(person.getPassword()));
-        if (!this.persons.update(person)) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (!this.personService.update(person)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok().build();
     }
@@ -83,17 +83,15 @@ public class PersonController {
     @PatchMapping("/")
     public ResponseEntity<Void> partialUpdate(@Valid @RequestBody PersonDTO personDTO) {
         personDTO.setPassword(encoder.encode(personDTO.getPassword()));
-        if (!this.persons.partialUpdate(personDTO)) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (!this.personService.partialUpdate(personDTO)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
-        Person person = new Person();
-        person.setId(id);
-        if (!this.persons.delete(person)) {
+        if (!this.personService.deleteById(id)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok().build();
